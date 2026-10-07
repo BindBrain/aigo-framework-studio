@@ -26,7 +26,7 @@ The Studio repository is intentionally separate from the Framework source reposi
 - Evidence management
 - Governance rules
 - Assurance records
-- Governance dashboard and activity overview
+- Governance d```bashboard and activity overview
 - PostgreSQL persistence
 - Docker-based self-hosted deployment
 
@@ -36,11 +36,11 @@ AIGO Studio is designed to run as a self-hosted deployment for an organization.
 
 ### Run with Docker Compose
 
-`ash
+```bash
 git clone https://github.com/BindBrain/aigo-framework-studio.git
 cd aigo-framework-studio
 docker compose up -d --build
-`
+```
 
 Then open Studio at http://localhost:3001 and the API at http://localhost:8000.
 
