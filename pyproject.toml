@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aigo-studio"
+version = "0.1.0"
+description = "AIGO Studio - operational AI governance management platform"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = "Apache-2.0"
+authors = [{ name = "AIGO Framework Contributors" }]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "alembic>=1.14",
+    "python-multipart>=0.0.9"
+]
+
+[tool.setuptools.packages.find]
+where = ["apps"]
+include = ["app*"]
