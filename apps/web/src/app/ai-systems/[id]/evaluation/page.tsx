@@ -61,13 +61,44 @@ export default function EvaluationPage() {
   >("PASS");
   const [resultNotes, setResultNotes] = useState("");
   const [resultsSaved, setResultsSaved] = useState(false);
+  const [historyRuleId, setHistoryRuleId] = useState<string | null>(null);
+  const [ruleHistory, setRuleHistory] = useState<
+    {
+      id: string;
+      rule_id: string;
+      status: "PASS" | "FAIL" | "NOT_APPLICABLE";
+      notes?: string | null;
+      created_at: string;
+    }[]
+  >([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  async function openRuleHistory(ruleId: string) {
+    setHistoryRuleId(ruleId);
+    setHistoryLoading(true);
+    try {
+      const response = await fetch(
+        `/api/ai-systems/${id}/rule-results/${ruleId}/history`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to load rule result history.");
+      }
+      const data = await response.json();
+      setRuleHistory(data.history ?? []);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to load rule result history.");
+      setRuleHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
 
   async function saveEvaluationRequest() {
     setError("");
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/evaluation`,
+        `/api/ai-systems/${id}/evaluation`,
         {
           method: "PUT",
           headers: {
@@ -162,7 +193,7 @@ export default function EvaluationPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/rules`,
+        `/api/ai-systems/${id}/rules`,
         {
           method: "PUT",
           headers: {
@@ -202,7 +233,7 @@ setRules(data.rules || data.value || []);
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/rules`,
+        `/api/ai-systems/${id}/rules`,
         {
           method: "PUT",
           headers: {
@@ -239,7 +270,7 @@ setRules(data.rules || data.value || []);
   async function loadGovernanceRules() {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/rules`
+        `/api/ai-systems/${id}/rules`
       );
 
       if (!response.ok) {
@@ -259,7 +290,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
   async function loadEvaluationRequest() {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/evaluation`
+        `/api/ai-systems/${id}/evaluation`
       );
 
       if (!response.ok) {
@@ -316,7 +347,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
     ];
 
     const response = await fetch(
-      `http://127.0.0.1:8000/ai-systems/${id}/rule-results`,
+      `/api/ai-systems/${id}/rule-results`,
       {
         method: "PUT",
         headers: {
@@ -338,7 +369,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
   };
   const loadRuleResults = async () => {
     const response = await fetch(
-      `http://127.0.0.1:8000/ai-systems/${id}/rule-results`,
+      `/api/ai-systems/${id}/rule-results`,
     );
 
     if (!response.ok) {
@@ -351,7 +382,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
   useEffect(() => {
     async function loadSystem() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/ai-systems");
+        const response = await fetch("/api/ai-systems");
 
         if (!response.ok) {
           throw new Error("Unable to load AI systems.");
@@ -899,7 +930,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                   </button>
                   {resultsSaved && (
                     <span className="text-xs font-medium text-[#3e6b4d]">
-                      Rule result saved.
+                      Saved to this evaluation.
                     </span>
                   )}
                 </div>
@@ -928,9 +959,23 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                                 </div>
                               )}
                             </div>
-                            <span className="rounded bg-[#f1f3f5] px-2 py-1 text-[10px] font-semibold tracking-wide text-[#626b77]">
-                              {result.status}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openRuleHistory(result.rule_id)}
+                                title="View history"
+                                aria-label={`View history for ${rule?.name ?? result.rule_id}`}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d9dee4] text-[#626b77] hover:bg-[#f7f8fa]"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                                  <path d="M12 8v5l3 2" />
+                                  <circle cx="12" cy="12" r="8" />
+                                </svg>
+                              </button>
+                              <span className="rounded bg-[#f1f3f5] px-2 py-1 text-[10px] font-semibold tracking-wide text-[#626b77]">
+                                {result.status}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
@@ -939,6 +984,57 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                 )}
               </div>
             </div>
+
+            {historyRuleId && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+                <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+                  <div className="flex items-center justify-between border-b border-[#e1e5e9] px-5 py-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#18202b]">Rule Result History</h3>
+                      <p className="mt-1 text-xs text-[#737b87]">
+                        {rules.find((item) => item.id === historyRuleId)?.name ?? historyRuleId}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoryRuleId(null);
+                        setRuleHistory([]);
+                      }}
+                      className="rounded-md px-2 py-1 text-lg text-[#737b87] hover:bg-[#f7f8fa]"
+                      aria-label="Close history"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+                    {historyLoading ? (
+                      <p className="text-sm text-[#737b87]">Loading history...</p>
+                    ) : ruleHistory.length === 0 ? (
+                      <p className="text-sm text-[#9299a3]">No history recorded for this rule yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {ruleHistory.map((item) => (
+                          <div key={item.id} className="rounded-md border border-[#e1e5e9] bg-[#fafbfc] px-4 py-3">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs font-medium text-[#737b87]">
+                                {new Date(item.created_at).toLocaleString()}
+                              </span>
+                              <span className="rounded bg-[#f1f3f5] px-2 py-1 text-[10px] font-semibold tracking-wide text-[#626b77]">
+                                {item.status}
+                              </span>
+                            </div>
+                            {item.notes && (
+                              <p className="mt-2 text-sm leading-6 text-[#626b77]">{item.notes}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-[#e1e5e9] bg-white p-5">

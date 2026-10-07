@@ -51,8 +51,8 @@ export default function ControlsPage() {
     async function load() {
       try {
         const [systemsResponse, controlsResponse] = await Promise.all([
-          fetch("http://127.0.0.1:8000/ai-systems"),
-          fetch(`http://127.0.0.1:8000/ai-systems/${id}/control`),
+          fetch("/api/ai-systems"),
+          fetch(`/api/ai-systems/${id}/control`),
         ]);
 
         if (!systemsResponse.ok || !controlsResponse.ok) {
@@ -181,7 +181,7 @@ export default function ControlsPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/control${editingControlId ? `/${editingControlId}` : ""}`,
+        `/api/ai-systems/${id}/control${editingControlId ? `/${editingControlId}` : ""}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -216,7 +216,7 @@ export default function ControlsPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/control/${control.id}`,
+        `/api/ai-systems/${id}/control/${control.id}`,
         { method: "DELETE" },
       );
 

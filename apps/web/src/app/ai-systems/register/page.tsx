@@ -38,7 +38,7 @@ export default function RegisterAISystemPage() {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ai-systems", {
+      const response = await fetch("/api/ai-systems", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

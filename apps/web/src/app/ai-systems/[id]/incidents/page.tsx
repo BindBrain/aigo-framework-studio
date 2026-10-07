@@ -13,12 +13,20 @@ type AISystem = {
   lifecycle_status: string;
 };
 
+type User = {
+  id: string;
+  name: string;
+  title?: string | null;
+  active: boolean;
+};
+
 type Incident = {
   id: string;
   objectType: string;
   objectVersion: string;
   schemaVersion: string;
   status: string;
+  performedBy?: string | null;
   aiSystemId: string;
   incidentType: string;
   severity: string;
@@ -143,6 +151,8 @@ export default function IncidentManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [performedBy, setPerformedBy] = useState("");
 
   const [incidentTitle, setIncidentTitle] = useState("");
   const [incidentType, setIncidentType] = useState("MODEL_PERFORMANCE");
@@ -232,6 +242,7 @@ const [riskReassessmentOwner, setRiskReassessmentOwner] = useState("");
     setIncidentType("MODEL_PERFORMANCE");
     setStatus("DETECTED");
     setSeverity("MEDIUM");
+      setPerformedBy("");
     setDescription("");
     setSeverityRationale("");
     setExpectedCondition("");
@@ -314,6 +325,7 @@ setRiskReassessmentOwner("");
     setIncidentType(incident.incidentType || "MODEL_PERFORMANCE");
     setStatus(incident.status || "DETECTED");
     setSeverity(incident.severity || "MEDIUM");
+      setPerformedBy(incident.performedBy || "");
     setDescription(incident.description || "");
     setSeverityRationale(incident.severityRationale || "");
     setExpectedCondition(incident.expectedCondition || "");
@@ -416,7 +428,7 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
 
   async function loadIncidents() {
     const response = await fetch(
-      `http://127.0.0.1:8000/ai-systems/${id}/incidents`
+      `/api/ai-systems/${id}/incidents`
     );
 
     if (!response.ok) {
@@ -438,7 +450,7 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/incidents${
+        `/api/ai-systems/${id}/incidents${
           editingIncidentId ? `/${editingIncidentId}` : ""
         }`,
         {
@@ -451,6 +463,7 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
             objectVersion: "0.1",
             schemaVersion: "0.1",
             status,
+            performedBy: performedBy || null,
             aiSystemId: id,
             incidentType,
             severity,
@@ -592,7 +605,7 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/incidents/${incident.id}`,
+        `/api/ai-systems/${id}/incidents/${incident.id}`,
         {
           method: "DELETE",
         }
@@ -623,8 +636,9 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
   useEffect(() => {
     async function load() {
       try {
-        const [systemsResponse] = await Promise.all([
-          fetch("http://127.0.0.1:8000/ai-systems"),
+        const [systemsResponse, usersResponse] = await Promise.all([
+          fetch("/api/ai-systems"),
+          fetch("/api/users"),
           loadIncidents(),
         ]);
 
@@ -633,6 +647,8 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
         }
 
         const systems: AISystem[] = await systemsResponse.json();
+        const usersData = await usersResponse.json();
+        setUsers(Array.isArray(usersData) ? usersData : usersData.value || []);
         setSystem(systems.find((item) => item.id === id) || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load page.");
@@ -740,6 +756,22 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
                 ))}
               </select>
             </label>
+
+              <label className="space-y-1">
+                <span className="text-sm font-medium">Performed by</span>
+                <select
+                  value={performedBy}
+                  onChange={(e) => setPerformedBy(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                >
+                  <option value="">Actor not recorded</option>
+                  {users.filter((user) => user.active).map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}{user.title ? ` - ${user.title}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
           </div>
 
           <label className="mt-4 block space-y-1">
@@ -1641,7 +1673,7 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
                     Overview
                   </h3>
 
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-4 md:grid-cols-4">
                     <div>
                       <div className="text-xs text-slate-500">Status</div>
                       <div className="font-medium">{selectedIncident.status}</div>
@@ -1656,6 +1688,14 @@ setRiskReassessmentOwner(String(riskReassessment.owner || ""));
                       <div className="text-xs text-slate-500">Severity</div>
                       <div className="font-medium">{selectedIncident.severity}</div>
                     </div>
+
+                      <div>
+                        <div className="text-xs text-slate-500">Performed by</div>
+                        <div className="font-medium">
+                          {users.find((user) => user.id === selectedIncident.performedBy)?.name ||
+                            (selectedIncident.performedBy ? selectedIncident.performedBy : "Actor not recorded")}
+                        </div>
+                      </div>
                   </div>
                 </section>
 

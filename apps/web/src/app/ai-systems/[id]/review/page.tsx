@@ -41,6 +41,14 @@ type Review = {
   review_notes?: string | null;
   review_outcome?: string;
   created_at?: string;
+  performedBy?: string | null;
+};
+
+type User = {
+  id: string;
+  name: string;
+  title?: string | null;
+  active: boolean;
 };
 
 export default function ReviewPage() {
@@ -51,6 +59,8 @@ export default function ReviewPage() {
   const [evaluation, setEvaluation] = useState<EvaluationRequest | null>(null);
   const [rules, setRules] = useState<GovernanceRule[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [performedBy, setPerformedBy] = useState("");
   const [reviewScope, setReviewScope] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewOutcome, setReviewOutcome] = useState("NOT_ASSESSED");
@@ -60,12 +70,13 @@ export default function ReviewPage() {
 
   async function loadReviewData() {
     try {
-      const [systemsResponse, evaluationResponse, rulesResponse, reviewResponse] =
+      const [systemsResponse, evaluationResponse, rulesResponse, reviewResponse, usersResponse] =
         await Promise.all([
-          fetch("http://127.0.0.1:8000/ai-systems"),
-          fetch(`http://127.0.0.1:8000/ai-systems/${id}/evaluation`),
-          fetch(`http://127.0.0.1:8000/ai-systems/${id}/rules`),
-          fetch(`http://127.0.0.1:8000/ai-systems/${id}/review`),
+          fetch("/api/ai-systems"),
+          fetch(`/api/ai-systems/${id}/evaluation`),
+          fetch(`/api/ai-systems/${id}/rules`),
+          fetch(`/api/ai-systems/${id}/review`),
+          fetch("/api/users"),
         ]);
 
       if (!systemsResponse.ok) {
@@ -89,6 +100,7 @@ export default function ReviewPage() {
         await evaluationResponse.json();
       const rulesData = await rulesResponse.json();
       const reviewData = await reviewResponse.json();
+      const usersData = await usersResponse.json();
 
       const found = systems.find((item) => item.id === id);
 
@@ -99,11 +111,10 @@ export default function ReviewPage() {
       setSystem(found);
       setEvaluation(evaluationData);
       setRules(rulesData.value || rulesData.rules || []);
-      setReviews(
-        Array.isArray(reviewData)
-          ? reviewData
-          : reviewData.value || []
-      );
+      setUsers(Array.isArray(usersData) ? usersData : usersData.value || []);
+      const loadedReviews = Array.isArray(reviewData) ? reviewData : reviewData.value || [];
+      setReviews(loadedReviews);
+      setPerformedBy(loadedReviews[loadedReviews.length - 1]?.performedBy || "");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to load review data."
@@ -129,7 +140,7 @@ export default function ReviewPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/review`,
+        `/api/ai-systems/${id}/review`,
         {
           method: "PUT",
           headers: {
@@ -144,6 +155,7 @@ export default function ReviewPage() {
             review_scope: reviewScope.trim(),
             review_notes: reviewNotes.trim() || null,
             review_outcome: reviewOutcome,
+            performedBy: performedBy || null,
           }),
         }
       );
@@ -368,6 +380,24 @@ export default function ReviewPage() {
 
             <div>
               <label className="text-sm font-medium text-[#18202b]">
+                Performed by
+              </label>
+              <select
+                value={performedBy}
+                onChange={(event) => setPerformedBy(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-[#d8dde3] bg-white px-3 py-2 text-sm outline-none focus:border-[#9299a3]"
+              >
+                <option value="">Actor not recorded</option>
+                {users.filter((user) => user.active).map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}{user.title ? ` — ${user.title}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-[#18202b]">
                 Review outcome
               </label>
               <select
@@ -468,6 +498,13 @@ export default function ReviewPage() {
                         {review.created_at
                           ? new Date(review.created_at).toLocaleString()
                           : "Recorded"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-[#9299a3]">Performed by</div>
+                      <div className="mt-1 text-sm text-[#18202b]">
+                        {users.find((user) => user.id === review.performedBy)?.name || (review.performedBy ? review.performedBy : "Actor not recorded")}
                       </div>
                     </div>
                   </div>

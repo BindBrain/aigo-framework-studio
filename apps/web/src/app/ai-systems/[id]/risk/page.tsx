@@ -64,7 +64,7 @@ export default function RiskPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/risk${editingRiskId ? `/${editingRiskId}` : ""}`,
+        `/api/ai-systems/${id}/risk${editingRiskId ? `/${editingRiskId}` : ""}`,
         {
           method: "PUT",
           headers: {
@@ -170,7 +170,7 @@ export default function RiskPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/risk/${risk.id}`,
+        `/api/ai-systems/${id}/risk/${risk.id}`,
         {
           method: "DELETE",
         }
@@ -265,7 +265,7 @@ export default function RiskPage() {
     async function loadRisks() {
       try {
         const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/risk`,
+        `/api/ai-systems/${id}/risk`,
         );
 
         if (!response.ok) {
@@ -286,7 +286,7 @@ export default function RiskPage() {
     async function loadSystem() {
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/ai-systems"
+          "/api/ai-systems"
         );
 
         if (!response.ok) {

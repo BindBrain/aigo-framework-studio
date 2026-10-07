@@ -33,7 +33,7 @@ export default function MonitoringPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     params.then(async ({ id }) => {
       setId(id);
-      const response = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/monitoring`);
+      const response = await fetch(`/api/ai-systems/${id}/monitoring`);
       if (response.ok) {
         setObject(await response.json());
       }
@@ -67,7 +67,7 @@ export default function MonitoringPage({ params }: { params: Promise<{ id: strin
     };
 
     const response = await fetch(
-      `http://127.0.0.1:8000/ai-systems/${id}/monitoring`,
+      `/api/ai-systems/${id}/monitoring`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

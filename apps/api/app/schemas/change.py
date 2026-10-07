@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RoleReference(BaseModel):
@@ -80,7 +80,7 @@ class ChangeCreate(BaseModel):
     objectVersion: str = "0.1"
     schemaVersion: str = "0.1"
     status: str = "DRAFT"
-
+    performedBy: str | None = None
     aiSystemId: str | None = None
     changeTitle: str | None = Field(default=None, max_length=256)
     changeType: str

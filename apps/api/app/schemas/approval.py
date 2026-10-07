@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ApprovalCreate(BaseModel):
@@ -10,6 +10,7 @@ class ApprovalCreate(BaseModel):
     schemaVersion: str = "0.1"
 
     ai_system_id: str = Field(min_length=1, max_length=128)
+    performedBy: str | None = Field(default=None, max_length=128)
     approval_scope: str | None = Field(default=None, max_length=5000)
     approval_notes: str | None = Field(default=None, max_length=10000)
     approval_outcome: str = "NOT_ASSESSED"

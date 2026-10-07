@@ -10,6 +10,7 @@ class ReviewCreate(BaseModel):
     schemaVersion: str = "0.1"
 
     ai_system_id: str = Field(min_length=1, max_length=128)
+    performedBy: str | None = Field(default=None, max_length=128)
     review_scope: str | None = Field(default=None, max_length=5000)
     review_notes: str | None = Field(default=None, max_length=10000)
     review_outcome: str = "NOT_ASSESSED"

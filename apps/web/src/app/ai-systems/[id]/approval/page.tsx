@@ -8,6 +8,14 @@ type Approval = {
   approval_scope?: string | null;
   approval_notes?: string | null;
   approval_outcome?: string;
+  performedBy?: string | null;
+};
+
+type User = {
+  id: string;
+  name: string;
+  title?: string | null;
+  active: boolean;
 };
 
 export default function ApprovalPage() {
@@ -18,6 +26,8 @@ export default function ApprovalPage() {
   const [approvalScope, setApprovalScope] = useState("");
   const [approvalNotes, setApprovalNotes] = useState("");
   const [approvalOutcome, setApprovalOutcome] = useState("NOT_ASSESSED");
+  const [users, setUsers] = useState<User[]>([]);
+  const [performedBy, setPerformedBy] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,20 +35,24 @@ export default function ApprovalPage() {
   useEffect(() => {
     async function loadApproval() {
       try {
-        const response = await fetch(
-          `http://127.0.0.1:8000/ai-systems/${id}/approval`
-        );
+        const [response, usersResponse] = await Promise.all([
+          fetch(`/api/ai-systems/${id}/approval`),
+          fetch("/api/users"),
+        ]);
 
         if (!response.ok) {
           throw new Error("Unable to load approval");
         }
 
         const data = await response.json();
+        const usersData = await usersResponse.json();
 
         setApproval(data);
         setApprovalScope(data.approval_scope || "");
         setApprovalNotes(data.approval_notes || "");
         setApprovalOutcome(data.approval_outcome || "NOT_ASSESSED");
+        setUsers(Array.isArray(usersData) ? usersData : usersData.value || []);
+        setPerformedBy(data.performedBy || "");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load approval");
       } finally {
@@ -56,7 +70,7 @@ export default function ApprovalPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/approval`,
+        `/api/ai-systems/${id}/approval`,
         {
           method: "PUT",
           headers: {
@@ -71,6 +85,7 @@ export default function ApprovalPage() {
             approval_scope: approvalScope || null,
             approval_notes: approvalNotes || null,
             approval_outcome: approvalOutcome,
+            performedBy: performedBy || null,
           }),
         }
       );
@@ -82,6 +97,7 @@ export default function ApprovalPage() {
 
       const savedApproval = await response.json();
       setApproval(savedApproval);
+      setPerformedBy(savedApproval.performedBy || "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save approval");
     } finally {
@@ -142,6 +158,22 @@ export default function ApprovalPage() {
                     className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm"
                     placeholder="Record the approval rationale, conditions, or notes."
                   />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Performed by</label>
+                  <select
+                    value={performedBy}
+                    onChange={(event) => setPerformedBy(event.target.value)}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm"
+                  >
+                    <option value="">Actor not recorded</option>
+                    {users.filter((user) => user.active).map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}{user.title ? ` - ${user.title}` : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

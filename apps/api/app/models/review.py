@@ -1,7 +1,8 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -12,6 +13,7 @@ class ReviewModel(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     ai_system_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    performed_by: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     object_type: Mapped[str] = mapped_column(String(100), nullable=False, default="REVIEW")
     object_version: Mapped[str] = mapped_column(String(50), nullable=False, default="0.1")
     schema_version: Mapped[str] = mapped_column(String(50), nullable=False, default="0.1")

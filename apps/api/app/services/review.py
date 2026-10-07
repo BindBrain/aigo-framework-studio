@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -17,6 +19,7 @@ def save_review(db: Session, ai_system_id: str, data: ReviewCreate) -> dict:
     review.review_notes = data.review_notes
     review.review_outcome = data.review_outcome
     review.ai_system_id = ai_system_id
+    review.performed_by = UUID(data.performedBy) if data.performedBy else None
 
     db.add(review)
     db.commit()
@@ -47,4 +50,7 @@ def _to_dict(review: ReviewModel) -> dict:
         "review_scope": review.review_scope,
         "review_notes": review.review_notes,
         "review_outcome": review.review_outcome,
+        "performedBy": str(review.performed_by) if review.performed_by else None,
+        "createdAt": review.created_at.isoformat() if review.created_at else None,
+        "updatedAt": review.updated_at.isoformat() if review.updated_at else None,
     }

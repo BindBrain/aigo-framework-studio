@@ -20,6 +20,9 @@ def _to_dict(incident: IncidentModel) -> dict:
             "severity": incident.severity,
             "description": incident.description,
             "detection": incident.detection,
+            "performedBy": str(incident.performed_by) if incident.performed_by else None,
+            "createdAt": incident.created_at.isoformat() if incident.created_at else None,
+            "updatedAt": incident.updated_at.isoformat() if incident.updated_at else None,
         }
     )
     return data
@@ -45,6 +48,7 @@ def save_incident(
         description=payload.description,
         detection=payload.detection.model_dump(),
         incident_data=data,
+        performed_by=UUID(payload.performedBy) if payload.performedBy else None,
     )
 
     db.add(incident)
@@ -94,6 +98,7 @@ def update_incident(
     incident.description = payload.description
     incident.detection = payload.detection.model_dump()
     incident.incident_data = data
+    incident.performed_by = UUID(payload.performedBy) if payload.performedBy else None
 
     db.commit()
     db.refresh(incident)

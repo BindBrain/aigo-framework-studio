@@ -34,7 +34,7 @@ export default function AISystemsPage() {
   useEffect(() => {
     async function loadSystems() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/ai-systems");
+        const response = await fetch("/api/ai-systems");
 
         if (!response.ok) {
           throw new Error("Unable to load AI systems.");

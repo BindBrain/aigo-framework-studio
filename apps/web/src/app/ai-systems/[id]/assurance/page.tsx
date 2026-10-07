@@ -37,7 +37,7 @@ export default function AssurancePage() {
     async function load() {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/assurances?ai_system_id=${id}`
+          `/api/assurances?ai_system_id=${id}`
         );
 
         if (!response.ok) {
