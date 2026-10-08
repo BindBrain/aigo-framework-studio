@@ -172,7 +172,7 @@ export default function EvaluationPage() {
       }
 
       const data = await response.json();
-setRules(data.rules || data.value || []);
+setRules(Array.isArray(data) ? data : data.rules || data.value || []);
       setRuleName("");
       setRuleDescription("");
       setRuleSource("");
@@ -212,7 +212,7 @@ setRules(data.rules || data.value || []);
       }
 
       const data = await response.json();
-setRules(data.rules || data.value || []);
+setRules(Array.isArray(data) ? data : data.rules || data.value || []);
 
       if (editingRuleId === ruleId) {
         setEditingRuleId(null);
