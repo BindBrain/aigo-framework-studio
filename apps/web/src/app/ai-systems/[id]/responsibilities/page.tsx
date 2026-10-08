@@ -396,16 +396,44 @@ export default function ResponsibilitiesPage() {
                       key={user.id}
                       className="rounded-lg border border-[#e1e5e9] p-4"
                     >
-                      <div className="text-sm font-semibold text-[#18202b]">
-                        {user.name}
-                      </div>
-                      <div className="mt-1 text-sm text-[#626b77]">
-                        {user.title || "Title not specified"}
-                      </div>
-                      <div className="mt-1 text-xs text-[#9299a3]">
-                        {user.organizationUnit || "Organization unit not specified"}
-                        {" / "}
-                        {user.active ? "Active" : "Inactive"}
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-semibold text-[#18202b]">
+                            {user.name}
+                          </div>
+                          <div className="mt-1 text-sm text-[#626b77]">
+                            {user.title || "Title not specified"}
+                          </div>
+                          <div className="mt-1 text-xs text-[#9299a3]">
+                            {user.organizationUnit || "Organization unit not specified"}
+                            {" / "}
+                            {user.active ? "Active" : "Inactive"}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingUser(user);
+                              setEditForm({
+                                name: user.name,
+                                title: user.title || "",
+                                organization_unit: user.organizationUnit || "",
+                                active: user.active,
+                              });
+                            }}
+                            className="rounded-md border border-[#d7dce2] px-3 py-1.5 text-xs font-medium text-[#18202b]"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deletePerson(user)}
+                            className="rounded-md border border-[#d7dce2] px-3 py-1.5 text-xs font-medium text-[#626b77]"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
