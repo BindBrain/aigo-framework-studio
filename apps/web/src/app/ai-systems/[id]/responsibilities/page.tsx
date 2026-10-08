@@ -41,6 +41,8 @@ export default function ResponsibilitiesPage() {
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [personForm, setPersonForm] = useState({ name: "", title: "", organization_unit: "", active: true });
+  const [assignmentForm, setAssignmentForm] = useState({ userId: "", role: "SYSTEM_OWNER", effectiveFrom: new Date().toISOString().slice(0, 16) });
 
   useEffect(() => {
     async function load() {
@@ -77,6 +79,43 @@ export default function ResponsibilitiesPage() {
     load();
   }, [id]);
 
+  async function createPerson(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    const response = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(personForm),
+    });
+    if (!response.ok) {
+      setError("Unable to create person.");
+      return;
+    }
+    const created = await response.json();
+    setUsers((current) => [...current, created]);
+    setAssignmentForm((current) => ({ ...current, userId: created.id }));
+    setPersonForm({ name: "", title: "", organization_unit: "", active: true });
+  }
+
+  async function createAssignment(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
+    const response = await fetch(`/api/ai-systems/${id}/responsibilities`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: assignmentForm.userId,
+        role: assignmentForm.role,
+        effective_from: new Date(assignmentForm.effectiveFrom).toISOString(),
+      }),
+    });
+    if (!response.ok) {
+      setError("Unable to create responsibility assignment.");
+      return;
+    }
+    const created = await response.json();
+    setResponsibilities((current) => [...current, created]);
+  }
   const userById = new Map(users.map((user) => [user.id, user]));
 
   return (
@@ -172,6 +211,43 @@ export default function ResponsibilitiesPage() {
             </section>
 
             <section className="mt-6 rounded-lg border border-[#e1e5e9] bg-white p-6">
+              <h2 className="text-base font-semibold text-[#18202b]">Assign responsibility</h2>
+              <p className="mt-1 text-sm text-[#737b87]">Assign an accountable governance role to a registered person.</p>
+              <form onSubmit={createAssignment} className="mt-5 grid gap-4 md:grid-cols-2">
+                <select required value={assignmentForm.userId} onChange={(e) => setAssignmentForm({ ...assignmentForm, userId: e.target.value })} className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm">
+                  <option value="">Select person</option>
+                  {users.filter((user) => user.active).map((user) => (
+                    <option key={user.id} value={user.id}>{user.name}</option>
+                  ))}
+                </select>
+                <select value={assignmentForm.role} onChange={(e) => setAssignmentForm({ ...assignmentForm, role: e.target.value })} className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm">
+                  <option value="SYSTEM_OWNER">System Owner</option>
+                  <option value="GOVERNANCE_OWNER">Governance Owner</option>
+                  <option value="RISK_OWNER">Risk Owner</option>
+                  <option value="CONTROL_OWNER">Control Owner</option>
+                  <option value="REVIEWER">Reviewer</option>
+                  <option value="APPROVER">Approver</option>
+                </select>
+                <label className="text-sm text-[#626b77]">
+                  Effective from
+                  <input required type="datetime-local" value={assignmentForm.effectiveFrom} onChange={(e) => setAssignmentForm({ ...assignmentForm, effectiveFrom: e.target.value })} className="mt-1 block w-full rounded-md border border-[#d7dce2] px-3 py-2 text-sm" />
+                </label>
+                <button type="submit" className="self-end rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white hover:bg-[#303946]">Assign responsibility</button>
+              </form>
+            </section>
+            <section className="mt-6 rounded-lg border border-[#e1e5e9] bg-white p-6">
+            <section className="mt-6 rounded-lg border border-[#e1e5e9] bg-white p-6">
+              <h2 className="text-base font-semibold text-[#18202b]">Add person</h2>
+              <p className="mt-1 text-sm text-[#737b87]">Register a person who can hold governance responsibility.</p>
+              <form onSubmit={createPerson} className="mt-5 grid gap-4 md:grid-cols-2">
+                <input required placeholder="Name" value={personForm.name} onChange={(e) => setPersonForm({ ...personForm, name: e.target.value })} className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm" />
+                <input placeholder="Title" value={personForm.title} onChange={(e) => setPersonForm({ ...personForm, title: e.target.value })} className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm" />
+                <input placeholder="Organization unit" value={personForm.organization_unit} onChange={(e) => setPersonForm({ ...personForm, organization_unit: e.target.value })} className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm" />
+                <label className="flex items-center gap-2 text-sm text-[#626b77]"><input type="checkbox" checked={personForm.active} onChange={(e) => setPersonForm({ ...personForm, active: e.target.checked })} /> Active</label>
+                <button type="submit" className="rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white hover:bg-[#303946] md:col-span-2">Add person</button>
+              </form>
+            </section>
+
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-base font-semibold text-[#18202b]">
