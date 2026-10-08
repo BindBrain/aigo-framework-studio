@@ -317,31 +317,7 @@ export default function ClassificationPage() {
           </div>
         </section>
 
-        <section className="mt-5 rounded-lg border border-[#e1e5e9] bg-white p-6">
-          <h2 className="text-base font-semibold text-[#18202b]">
-            Classification level
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-[#737b87]">
-            Select the current AIGO classification for this AI system.
-          </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {["CLASS_1", "CLASS_2", "CLASS_3", "CLASS_4"].map((level) => (
-              <button
-                key={level}
-                type="button"
-                onClick={() => setClassificationLevel(level)}
-                disabled={classificationExists}
-                className={`rounded-md border px-4 py-3 text-left text-sm font-medium ${
-                  classificationLevel === level
-                    ? "border-[#18202b] bg-[#f1f3f5] text-[#18202b]"
-                    : "border-[#e5e8eb] bg-[#fafbfc] text-[#626b77] hover:border-[#b8bec6]"
-                }`}
-              >
-                {level.replace("CLASS_", "Class ")}
-              </button>
-            ))}
-          </div>
-        </section>
+        
 
         <section className="mt-5 rounded-lg border border-[#e1e5e9] bg-white p-6">
           <h2 className="text-base font-semibold text-[#18202b]">
@@ -429,43 +405,7 @@ export default function ClassificationPage() {
           </div>
         </section>
 
-        <section className="mt-5 rounded-lg border border-[#e1e5e9] bg-white p-6">
-          <h2 className="text-base font-semibold text-[#18202b]">
-            Assessment result
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-[#737b87]">
-            Current outcome recorded for this classification assessment.
-          </p>
-
-          <div className="mt-5 grid gap-5 md:grid-cols-3">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9299a3]">
-                Outcome
-              </div>
-              <p className="mt-2 text-sm font-medium text-[#3f4752]">
-                {assessmentOutcome.replaceAll("_", " ")}
-              </p>
-            </div>
-
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9299a3]">
-                Summary
-              </div>
-              <p className="mt-2 text-sm leading-6 text-[#3f4752]">
-                {assessmentSummary || "Not yet assessed."}
-              </p>
-            </div>
-
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9299a3]">
-                Rationale
-              </div>
-              <p className="mt-2 text-sm leading-6 text-[#3f4752]">
-                {assessmentRationale || "Not yet assessed."}
-              </p>
-            </div>
-          </div>
-        </section>
+        
 
         <div className="mt-6 flex items-center justify-between">
           <Link
