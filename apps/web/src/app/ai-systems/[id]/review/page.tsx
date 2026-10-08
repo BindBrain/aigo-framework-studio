@@ -59,6 +59,7 @@ export default function ReviewPage() {
   const [evaluation, setEvaluation] = useState<EvaluationRequest | null>(null);
   const [rules, setRules] = useState<GovernanceRule[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [expandedReviewId, setExpandedReviewId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [performedBy, setPerformedBy] = useState("");
   const [reviewScope, setReviewScope] = useState("");
@@ -455,75 +456,81 @@ export default function ReviewPage() {
           </div>
 
           {reviews.length > 0 ? (
-            <div className="mt-5 space-y-4">
-              {reviews.map((review, index) => (
-                <article
-                  key={review.id}
-                  className="rounded-lg border border-[#e5e7eb] bg-[#fafbfc] p-5"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xs font-medium uppercase tracking-[0.08em] text-[#9299a3]">
-                        Review {reviews.length - index}
+            <div className="mt-4 space-y-2">
+              {reviews.map((review, index) => {
+                const isExpanded = expandedReviewId === review.id;
+                const reviewer =
+                  users.find((user) => user.id === review.performedBy)?.name ||
+                  review.performedBy ||
+                  "Actor not recorded";
+
+                return (
+                  <article key={review.id} className="overflow-hidden rounded-md border border-[#e5e7eb] bg-white">
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() => setExpandedReviewId(isExpanded ? null : review.id)}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#fafbfc]"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-[#18202b]">
+                          {review.reviewType || "GOVERNANCE_REVIEW"}
+                        </div>
+                        <div className="mt-1 text-xs text-[#737b87]">
+                          {reviewer} {"\u00B7"} Review {reviews.length - index}
+                        </div>
                       </div>
-
-                      <div className="mt-2 text-sm font-semibold text-[#18202b]">
-                        {review.reviewType || "GOVERNANCE_REVIEW"}
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="rounded bg-[#f1f3f5] px-2 py-1 text-xs font-medium text-[#626b77]">
+                          {review.review_outcome || "NOT_ASSESSED"}
+                        </span>
+                        <span className="text-xs text-[#737b87]" aria-hidden="true">
+                          {isExpanded ? "\u25BC" : "\u25B6"}
+                        </span>
                       </div>
-                    </div>
-
-                    <span className="rounded bg-white px-2 py-1 text-xs font-medium text-[#626b77]">
-                      {review.review_outcome || "NOT_ASSESSED"}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 md:grid-cols-3">
-                    <div>
-                      <div className="text-xs text-[#9299a3]">Review ID</div>
-                      <div className="mt-1 break-all text-xs text-[#626b77]">
-                        {review.id}
+                    </button>
+                    {isExpanded && (
+                      <div className="border-t border-[#e5e7eb] bg-[#fafbfc] p-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <div className="text-xs text-[#9299a3]">Review ID</div>
+                            <div className="mt-1 break-all text-xs text-[#626b77]">{review.id}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-[#9299a3]">Record status</div>
+                            <div className="mt-1 text-sm text-[#18202b]">Recorded</div>
+                            {review.status && review.status !== "DRAFT" && (
+                              <div className="mt-1 text-xs text-[#737b87]">Stored status: {review.status}</div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs text-[#9299a3]">Recorded</div>
+                            <div className="mt-1 text-sm text-[#18202b]">
+                              {review.created_at ? new Date(review.created_at).toLocaleString() : "Date not recorded"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-[#9299a3]">Performed by</div>
+                            <div className="mt-1 text-sm text-[#18202b]">{reviewer}</div>
+                          </div>
+                        </div>
+                        <div className="mt-4 border-t border-[#e5e7eb] pt-4">
+                          <div className="text-xs text-[#9299a3]">Review scope</div>
+                          <div className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#18202b]">
+                            {review.review_scope || "Not specified"}
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <div className="text-xs text-[#9299a3]">Review notes</div>
+                          <div className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#626b77]">
+                            {review.review_notes || "No notes recorded."}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-[#9299a3]">Status</div>
-                      <div className="mt-1 text-sm text-[#18202b]">
-                        {review.status || "Not specified"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-[#9299a3]">Recorded</div>
-                      <div className="mt-1 text-sm text-[#18202b]">
-                        {review.created_at
-                          ? new Date(review.created_at).toLocaleString()
-                          : "Recorded"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-[#9299a3]">Performed by</div>
-                      <div className="mt-1 text-sm text-[#18202b]">
-                        {users.find((user) => user.id === review.performedBy)?.name || (review.performedBy ? review.performedBy : "Actor not recorded")}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 border-t border-[#e5e7eb] pt-4">
-                    <div className="text-xs text-[#9299a3]">Review scope</div>
-                    <div className="mt-1 text-sm leading-6 text-[#18202b]">
-                      {review.review_scope || "Not specified"}
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="text-xs text-[#9299a3]">Review notes</div>
-                    <div className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#626b77]">
-                      {review.review_notes || "No notes recorded."}
-                    </div>
-                  </div>
-                </article>
-              ))}
+                    )}
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <div className="mt-5 rounded-md border border-dashed border-[#dfe3e8] bg-[#fafbfc] p-5 text-sm text-[#737b87]">
