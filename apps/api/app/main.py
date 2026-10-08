@@ -18,7 +18,7 @@ from app.schemas.rule_results import RuleResultsUpdate
 
 from app.services.ai_systems import create_ai_system, list_ai_systems
 from app.services.approval import get_approval, save_approval
-from app.services.classifications import get_classification, save_classification
+from app.services.classifications import delete_classification, get_classification, save_classification
 from app.services.evaluations import get_evaluation_request, save_evaluation_request, update_evaluation_section
 from app.services.evidence import create_evidence, delete_evidence, list_evidence, update_evidence
 from app.services.monitoring import get_monitoring, save_monitoring
@@ -107,6 +107,13 @@ def put_ai_system_classification(
     db: Session = Depends(get_db),
 ):
     return save_classification(db, ai_system_id, data)
+
+
+@app.delete("/ai-systems/{ai_system_id}/classification")
+def delete_ai_system_classification(ai_system_id: str, db: Session = Depends(get_db)):
+    if not delete_classification(db, ai_system_id):
+        raise HTTPException(status_code=404, detail="Classification not found")
+    return {"deleted": True, "ai_system_id": ai_system_id}
 
 
 @app.get("/ai-systems/{ai_system_id}/evaluation")
@@ -417,7 +424,7 @@ def delete_ai_system_incident(
 
 
 from app.schemas.user import UserCreate
-from app.services.user import create_user, get_users
+from app.services.user import create_user, delete_user, get_users, update_user
 
 @app.get("/users")
 def list_users(db: Session = Depends(get_db)):
@@ -426,6 +433,33 @@ def list_users(db: Session = Depends(get_db)):
 @app.post("/users", status_code=201)
 def post_user(data: UserCreate, db: Session = Depends(get_db)):
     return create_user(db, data)
+
+@app.put("/users/{user_id}")
+def put_user(user_id: str, data: UserCreate, db: Session = Depends(get_db)):
+    from uuid import UUID
+    try:
+        parsed_id = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+    result = update_user(db, parsed_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return result
+
+@app.delete("/users/{user_id}")
+def remove_user(user_id: str, db: Session = Depends(get_db)):
+    from uuid import UUID
+    try:
+        parsed_id = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+    try:
+        deleted = delete_user(db, parsed_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return {"deleted": True, "id": user_id}
 
 
 from app.schemas.responsibility import ResponsibilityAssignmentCreate
