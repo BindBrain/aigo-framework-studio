@@ -400,7 +400,7 @@ def delete_ai_system_incident(
 
 
 from app.schemas.user import UserCreate
-from app.services.user import create_user, get_users
+from app.services.user import create_user, delete_user, get_users, update_user
 
 @app.get("/users")
 def list_users(db: Session = Depends(get_db)):
@@ -409,6 +409,33 @@ def list_users(db: Session = Depends(get_db)):
 @app.post("/users", status_code=201)
 def post_user(data: UserCreate, db: Session = Depends(get_db)):
     return create_user(db, data)
+
+@app.put("/users/{user_id}")
+def put_user(user_id: str, data: UserCreate, db: Session = Depends(get_db)):
+    from uuid import UUID
+    try:
+        parsed_id = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+    result = update_user(db, parsed_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return result
+
+@app.delete("/users/{user_id}")
+def remove_user(user_id: str, db: Session = Depends(get_db)):
+    from uuid import UUID
+    try:
+        parsed_id = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+    try:
+        deleted = delete_user(db, parsed_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return {"deleted": True, "id": user_id}
 
 
 from app.schemas.responsibility import ResponsibilityAssignmentCreate

@@ -43,6 +43,8 @@ export default function ResponsibilitiesPage() {
   const [error, setError] = useState("");
   const [personForm, setPersonForm] = useState({ name: "", title: "", organization_unit: "", active: true });
   const [assignmentForm, setAssignmentForm] = useState({ userId: "", role: "SYSTEM_OWNER", effectiveFrom: new Date().toISOString().slice(0, 16) });
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", title: "", organization_unit: "", active: true });
 
   useEffect(() => {
     async function load() {
@@ -118,6 +120,47 @@ export default function ResponsibilitiesPage() {
   }
   const userById = new Map(users.map((user) => [user.id, user]));
 
+  async function updatePerson(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editingUser) return;
+    setError("");
+
+    const response = await fetch(`/api/users/${editingUser.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setError(data?.detail || "Unable to update person.");
+      return;
+    }
+
+    const updated = await response.json();
+    setUsers((current) =>
+      current.map((user) => user.id === updated.id ? updated : user)
+    );
+    setEditingUser(null);
+  }
+
+  async function deletePerson(user: User) {
+    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) return;
+    setError("");
+
+    const response = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setError(data?.detail || "Unable to delete person.");
+      return;
+    }
+
+    setUsers((current) => current.filter((item) => item.id !== user.id));
+    if (assignmentForm.userId === user.id) {
+      setAssignmentForm((current) => ({ ...current, userId: "" }));
+    }
+  }
   return (
     <main className="min-h-screen bg-[#f7f8fa]">
       <div className="mx-auto max-w-6xl px-6 py-8">
@@ -168,7 +211,48 @@ export default function ResponsibilitiesPage() {
                   responsibilities.map((assignment) => {
                     const user = userById.get(assignment.userId);
 
-                    return (
+                    async function updatePerson(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editingUser) return;
+    setError("");
+
+    const response = await fetch(`/api/users/${editingUser.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setError(data?.detail || "Unable to update person.");
+      return;
+    }
+
+    const updated = await response.json();
+    setUsers((current) =>
+      current.map((user) => user.id === updated.id ? updated : user)
+    );
+    setEditingUser(null);
+  }
+
+  async function deletePerson(user: User) {
+    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) return;
+    setError("");
+
+    const response = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setError(data?.detail || "Unable to delete person.");
+      return;
+    }
+
+    setUsers((current) => current.filter((item) => item.id !== user.id));
+    if (assignmentForm.userId === user.id) {
+      setAssignmentForm((current) => ({ ...current, userId: "" }));
+    }
+  }
+  return (
                       <div
                         key={assignment.id}
                         className="rounded-lg border border-[#e1e5e9] bg-[#fafbfc] p-4"
@@ -236,6 +320,52 @@ export default function ResponsibilitiesPage() {
               </form>
             </section>
             <section className="mt-6 rounded-lg border border-[#e1e5e9] bg-white p-6">
+            {editingUser && (
+              <section className="mt-8 rounded-lg border border-[#e1e5e9] bg-white p-6">
+                <h2 className="text-base font-semibold text-[#18202b]">Edit person</h2>
+                <form onSubmit={updatePerson} className="mt-5 grid gap-4 md:grid-cols-2">
+                  <input
+                    value={editForm.name}
+                    onChange={(event) => setEditForm({ ...editForm, name: event.target.value })}
+                    placeholder="Name"
+                    className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm"
+                    required
+                  />
+                  <input
+                    value={editForm.title}
+                    onChange={(event) => setEditForm({ ...editForm, title: event.target.value })}
+                    placeholder="Title"
+                    className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm"
+                  />
+                  <input
+                    value={editForm.organization_unit}
+                    onChange={(event) => setEditForm({ ...editForm, organization_unit: event.target.value })}
+                    placeholder="Organization unit"
+                    className="rounded-md border border-[#d7dce2] px-3 py-2 text-sm"
+                  />
+                  <label className="flex items-center gap-2 text-sm text-[#626b77]">
+                    <input
+                      type="checkbox"
+                      checked={editForm.active}
+                      onChange={(event) => setEditForm({ ...editForm, active: event.target.checked })}
+                    />
+                    Active
+                  </label>
+                  <div className="flex gap-2 md:col-span-2">
+                    <button type="submit" className="rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white">
+                      Save changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUser(null)}
+                      className="rounded-md border border-[#d7dce2] px-4 py-2 text-sm font-medium text-[#626b77]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </section>
+            )}
             <section className="mt-6 rounded-lg border border-[#e1e5e9] bg-white p-6">
               <h2 className="text-base font-semibold text-[#18202b]">Add person</h2>
               <p className="mt-1 text-sm text-[#737b87]">Register a person who can hold governance responsibility.</p>
