@@ -37,6 +37,7 @@ class AssessmentResult(BaseModel):
 class AIClassificationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    classificationLevel: str = Field(pattern=r"^CLASS_[1-4]$")
     applicable_domains: list[str] = Field(default_factory=list)
     requirements: list[str] = Field(default_factory=list)
     risk_considerations: str | None = Field(default=None, max_length=5000)

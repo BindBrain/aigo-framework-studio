@@ -18,7 +18,7 @@ from app.schemas.rule_results import RuleResultsUpdate
 
 from app.services.ai_systems import create_ai_system, list_ai_systems
 from app.services.approval import get_approval, save_approval
-from app.services.classifications import get_classification, save_classification
+from app.services.classifications import delete_classification, get_classification, save_classification
 from app.services.evaluations import get_evaluation_request, save_evaluation_request
 from app.services.evidence import create_evidence, delete_evidence, list_evidence, update_evidence
 from app.services.monitoring import get_monitoring, save_monitoring
@@ -107,6 +107,13 @@ def put_ai_system_classification(
     db: Session = Depends(get_db),
 ):
     return save_classification(db, ai_system_id, data)
+
+
+@app.delete("/ai-systems/{ai_system_id}/classification")
+def delete_ai_system_classification(ai_system_id: str, db: Session = Depends(get_db)):
+    if not delete_classification(db, ai_system_id):
+        raise HTTPException(status_code=404, detail="Classification not found")
+    return {"deleted": True, "ai_system_id": ai_system_id}
 
 
 @app.get("/ai-systems/{ai_system_id}/evaluation")

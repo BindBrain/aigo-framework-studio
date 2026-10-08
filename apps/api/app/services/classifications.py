@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.ai_system import AISystemModel
 from app.models.classification import ClassificationModel
 from app.schemas.classification import AIClassificationCreate
 
@@ -12,6 +13,12 @@ def save_classification(
     ai_system_id: str,
     data: AIClassificationCreate,
 ) -> dict:
+    ai_system = db.scalars(
+        select(AISystemModel).where(AISystemModel.id == UUID(ai_system_id))
+    ).first()
+    if ai_system is None:
+        raise ValueError("AI system not found")
+
     classification = db.scalars(
         select(ClassificationModel).where(
             ClassificationModel.ai_system_id == ai_system_id
@@ -38,12 +45,18 @@ def save_classification(
     classification.evaluation_scope = data.evaluation_scope
     classification.ai_system_id = ai_system_id
 
+    canonical = dict(ai_system.metadata_json or {})
+    current_classification = dict(canonical.get("classification") or {})
+    current_classification["level"] = data.classificationLevel
+    canonical["classification"] = current_classification
+    ai_system.metadata_json = canonical
+
     db.add(classification)
+    db.add(ai_system)
     db.commit()
     db.refresh(classification)
 
     return _to_dict(classification)
-
 
 def get_classification(
     db: Session,
@@ -79,3 +92,28 @@ def _to_dict(classification: ClassificationModel) -> dict:
         "evaluation_scope": classification.evaluation_scope,
         "aiSystemId": classification.ai_system_id,
     }
+
+
+def delete_classification(db: Session, ai_system_id: str) -> bool:
+    ai_system = db.scalars(
+        select(AISystemModel).where(AISystemModel.id == UUID(ai_system_id))
+    ).first()
+    if ai_system is None:
+        return False
+
+    classification = db.scalars(
+        select(ClassificationModel).where(
+            ClassificationModel.ai_system_id == ai_system_id
+        )
+    ).first()
+    if classification is None:
+        return False
+
+    canonical = dict(ai_system.metadata_json or {})
+    canonical.pop("classification", None)
+    ai_system.metadata_json = canonical
+
+    db.delete(classification)
+    db.add(ai_system)
+    db.commit()
+    return True
