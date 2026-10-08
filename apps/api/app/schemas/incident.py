@@ -96,7 +96,7 @@ class IncidentCreate(BaseModel):
     objectVersion: str = "0.1"
     schemaVersion: Literal["0.1"] = "0.1"
     status: IncidentStatus = "DETECTED"
-
+    performedBy: str | None = None
     aiSystemId: str
     incidentType: IncidentType
     severity: IncidentSeverity

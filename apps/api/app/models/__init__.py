@@ -18,3 +18,9 @@ from app.models.rule import RuleModel
 
 from app.models.change import ChangeModel
 from app.models.incident import IncidentModel
+from app.models.rule_result import RuleResultModel
+from app.models.rule_result_history import RuleResultHistoryModel
+
+from app.models.user import UserModel
+from app.models.responsibility import ResponsibilityAssignmentModel
+

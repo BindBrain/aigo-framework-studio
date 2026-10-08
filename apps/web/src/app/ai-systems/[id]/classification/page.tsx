@@ -35,7 +35,7 @@ export default function ClassificationPage() {
   useEffect(() => {
     async function loadSystem() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/ai-systems");
+        const response = await fetch("/api/ai-systems");
 
         if (!response.ok) {
           throw new Error("Unable to load AI systems.");
@@ -58,7 +58,7 @@ export default function ClassificationPage() {
 
     async function loadClassification() {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/classification`);
+        const response = await fetch(`/api/ai-systems/${id}/classification`);
 
         if (!response.ok) {
           throw new Error("Unable to load classification.");
@@ -87,7 +87,7 @@ export default function ClassificationPage() {
     setError("");
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/classification`, {
+      const response = await fetch(`/api/ai-systems/${id}/classification`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

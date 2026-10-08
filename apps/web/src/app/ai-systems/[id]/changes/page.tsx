@@ -3,6 +3,13 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+type User = {
+  id: string;
+  name: string;
+  title?: string | null;
+  active: boolean;
+};
+
 type AISystem = {
   id: string;
   name: string;
@@ -76,6 +83,8 @@ export default function ChangeManagementPage() {
 
   const [system, setSystem] = useState<AISystem | null>(null);
   const [changes, setChanges] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [performedBy, setPerformedBy] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -147,6 +156,7 @@ export default function ChangeManagementPage() {
   function resetForm() {
     setEditingChangeId(null);
     setSaved(false);
+    setPerformedBy("");
     setChangeTitle("");
     setChangeType("MODEL_UPGRADE");
     setStatus("DRAFT");
@@ -191,6 +201,7 @@ export default function ChangeManagementPage() {
     setSaved(false);
 
     setChangeTitle(change.changeTitle || "");
+    setPerformedBy(change.performedBy || "");
     setChangeType(change.changeType || "MODEL_UPGRADE");
     setStatus(change.status || "DRAFT");
     setChangeDescription(change.changeDescription || "");
@@ -236,7 +247,7 @@ export default function ChangeManagementPage() {
 
   async function loadChanges() {
     const response = await fetch(
-      `http://127.0.0.1:8000/ai-systems/${id}/change`
+      `/api/ai-systems/${id}/change`
     );
 
     if (!response.ok) {
@@ -258,7 +269,7 @@ export default function ChangeManagementPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/change${
+        `/api/ai-systems/${id}/change${
           editingChangeId ? `/${editingChangeId}` : ""
         }`,
         {
@@ -271,6 +282,7 @@ export default function ChangeManagementPage() {
             objectVersion: "0.1",
             schemaVersion: "0.1",
             status,
+            performedBy: performedBy || null,
             aiSystemId: id,
             changeTitle: changeTitle.trim(),
             changeType,
@@ -361,7 +373,7 @@ export default function ChangeManagementPage() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/ai-systems/${id}/change/${change.id}`,
+        `/api/ai-systems/${id}/change/${change.id}`,
         {
           method: "DELETE",
         }
@@ -398,8 +410,9 @@ export default function ChangeManagementPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [systemsResponse] = await Promise.all([
-          fetch("http://127.0.0.1:8000/ai-systems"),
+        const [systemsResponse, usersResponse] = await Promise.all([
+          fetch("/api/ai-systems"),
+          fetch("/api/users"),
           loadChanges(),
         ]);
 
@@ -408,6 +421,8 @@ export default function ChangeManagementPage() {
         }
 
         const systems: AISystem[] = await systemsResponse.json();
+        const usersData = await usersResponse.json();
+        setUsers(Array.isArray(usersData) ? usersData : usersData.value || []);
         setSystem(systems.find((item) => item.id === id) || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load page.");
@@ -514,6 +529,22 @@ export default function ChangeManagementPage() {
               onChange={(e) => setChangeRequestor(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
             />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-sm font-medium">Performed by</span>
+            <select
+              value={performedBy}
+              onChange={(e) => setPerformedBy(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+            >
+              <option value="">Actor not recorded</option>
+              {users.filter((user) => user.active).map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}{user.title ? ` - ${user.title}` : ""}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="space-y-1">

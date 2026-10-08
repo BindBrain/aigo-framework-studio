@@ -29,7 +29,7 @@ export default function ReassessmentPage() {
     async function load() {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/ai-systems/${id}/evaluation`
+          `/api/ai-systems/${id}/evaluation`
         );
 
         if (!response.ok) {

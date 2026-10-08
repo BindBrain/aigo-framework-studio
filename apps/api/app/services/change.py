@@ -1,4 +1,4 @@
-﻿from uuid import UUID, uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,9 @@ def _to_dict(change: ChangeModel) -> dict:
             "changeType": change.change_type,
             "changeOwner": change.change_owner,
             "changeDescription": change.change_description,
+            "performedBy": str(change.performed_by) if change.performed_by else None,
+            "createdAt": change.created_at.isoformat() if change.created_at else None,
+            "updatedAt": change.updated_at.isoformat() if change.updated_at else None,
         }
     )
     return data
@@ -44,6 +47,7 @@ def save_change(
         change_owner=payload.changeOwner.model_dump(),
         change_description=payload.changeDescription,
         change_data=data,
+        performed_by=UUID(payload.performedBy) if payload.performedBy else None,
     )
 
     db.add(change)
@@ -94,6 +98,7 @@ def update_change(
     change.change_owner = payload.changeOwner.model_dump()
     change.change_description = payload.changeDescription
     change.change_data = data
+    change.performed_by = UUID(payload.performedBy) if payload.performedBy else None
 
     db.commit()
     db.refresh(change)

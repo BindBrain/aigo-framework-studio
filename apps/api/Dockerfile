@@ -1,8 +1,9 @@
-﻿FROM python:3.14-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
+COPY packages ./packages
 COPY apps/api ./apps/api
 COPY alembic.ini ./
 

@@ -25,14 +25,14 @@ export default function ValidationPage({
       try {
         const [systemsResponse, evidenceResponse, classificationResponse, evaluationResponse, riskResponse, reviewResponse, approvalResponse, assuranceResponse] =
           await Promise.all([
-            fetch("http://127.0.0.1:8000/ai-systems"),
-            fetch(`http://127.0.0.1:8000/evidence?ai_system_id=${id}`),
-            fetch(`http://127.0.0.1:8000/ai-systems/${id}/classification`),
-            fetch(`http://127.0.0.1:8000/ai-systems/${id}/evaluation`),
-            fetch(`http://127.0.0.1:8000/ai-systems/${id}/risk`),
-            fetch(`http://127.0.0.1:8000/ai-systems/${id}/review`),
-            fetch(`http://127.0.0.1:8000/ai-systems/${id}/approval`),
-            fetch(`http://127.0.0.1:8000/assurances?ai_system_id=${id}`),
+            fetch("/api/ai-systems"),
+            fetch(`/api/evidence?ai_system_id=${id}`),
+            fetch(`/api/ai-systems/${id}/classification`),
+            fetch(`/api/ai-systems/${id}/evaluation`),
+            fetch(`/api/ai-systems/${id}/risk`),
+            fetch(`/api/ai-systems/${id}/review`),
+            fetch(`/api/ai-systems/${id}/approval`),
+            fetch(`/api/assurances?ai_system_id=${id}`),
           ]);
 
         const systems = systemsResponse.ok ? await systemsResponse.json() : [];

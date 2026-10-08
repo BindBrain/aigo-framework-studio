@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import StudioSidebar from "@/components/StudioSidebar";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "/api";
 
 type AISystem = {
   id: string;

@@ -26,7 +26,7 @@ from app.services.risk import delete_risk, get_risks, save_risk, update_risk
 from app.services.control import delete_control, get_controls, save_control, update_control
 from app.services.review import get_review, save_review
 from app.services.rules import get_governance_rules, save_governance_rules
-from app.services.rule_results import get_rule_results, save_rule_results
+from app.services.rule_results import get_rule_result_history, get_rule_results, save_rule_results
 
 app = FastAPI(
     title="AIGO Framework API",
@@ -170,16 +170,26 @@ def put_ai_system_rules(
 
 
 @app.get("/ai-systems/{ai_system_id}/rule-results")
-def get_ai_system_rule_results(ai_system_id: str):
-    return get_rule_results(ai_system_id)
+def get_ai_system_rule_results(ai_system_id: str, db: Session = Depends(get_db)):
+    return {"results": get_rule_results(db, ai_system_id)}
+
+
+@app.get("/ai-systems/{ai_system_id}/rule-results/{rule_id}/history")
+def get_ai_system_rule_result_history(
+    ai_system_id: str,
+    rule_id: str,
+    db: Session = Depends(get_db),
+):
+    return {"history": get_rule_result_history(db, ai_system_id, rule_id)}
 
 
 @app.put("/ai-systems/{ai_system_id}/rule-results")
 def put_ai_system_rule_results(
     ai_system_id: str,
     data: RuleResultsUpdate,
+    db: Session = Depends(get_db),
 ):
-    return save_rule_results(ai_system_id, data)
+    return {"results": save_rule_results(db, ai_system_id, data)}
 
 
 @app.get("/ai-systems/{ai_system_id}/monitoring")
@@ -387,3 +397,27 @@ def delete_ai_system_incident(
     if not delete_incident(db, ai_system_id, incident_id):
         raise HTTPException(status_code=404, detail="Incident not found")
     return {"deleted": True, "id": incident_id}
+
+
+from app.schemas.user import UserCreate
+from app.services.user import create_user, get_users
+
+@app.get("/users")
+def list_users(db: Session = Depends(get_db)):
+    return get_users(db)
+
+@app.post("/users", status_code=201)
+def post_user(data: UserCreate, db: Session = Depends(get_db)):
+    return create_user(db, data)
+
+
+from app.schemas.responsibility import ResponsibilityAssignmentCreate
+from app.services.responsibility import create_responsibility, get_responsibilities
+
+@app.get("/ai-systems/{ai_system_id}/responsibilities")
+def list_responsibilities(ai_system_id: str, db: Session = Depends(get_db)):
+    return get_responsibilities(db, ai_system_id)
+
+@app.post("/ai-systems/{ai_system_id}/responsibilities", status_code=201)
+def post_responsibility(ai_system_id: str, data: ResponsibilityAssignmentCreate, db: Session = Depends(get_db)):
+    return create_responsibility(db, ai_system_id, data)

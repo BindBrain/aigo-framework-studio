@@ -1,7 +1,7 @@
-﻿from datetime import datetime
+from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +17,7 @@ class ChangeModel(Base):
         default=uuid4,
     )
     ai_system_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    performed_by: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     object_type: Mapped[str] = mapped_column(
         String(100),
         nullable=False,

@@ -39,6 +39,7 @@ type AISystem = {
 
 const lifecycleStages = [
   ["Register", "Maintain the governed AI system record, ownership, purpose, and context.", "register"],
+  ["Responsibilities", "Maintain accountable people, governance roles, and responsibility history.", "responsibilities"],
   ["Classify", "Determine applicable governance domains, requirements, risk considerations, and evaluation scope.", "classification"],
   ["Evaluate", "Evaluate the AI system against applicable governance rules, controls, and requirements.", "evaluation"],
   ["Review", "Review evaluation results, evidence, risks, and governance decisions.", "review"],
@@ -85,7 +86,7 @@ export default function GovernanceWorkspacePage() {
   useEffect(() => {
     async function loadSystem() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/ai-systems");
+        const response = await fetch("/api/ai-systems");
 
         if (!response.ok) {
           throw new Error("Unable to load AI systems.");
@@ -101,7 +102,7 @@ export default function GovernanceWorkspacePage() {
         setSystem(match);
 
         const evidenceResponse = await fetch(
-          `http://127.0.0.1:8000/evidence?ai_system_id=${id}`
+          `/api/evidence?ai_system_id=${id}`
         );
 
         if (evidenceResponse.ok) {
@@ -109,7 +110,7 @@ export default function GovernanceWorkspacePage() {
         }
 
         const classificationResponse = await fetch(
-          `http://127.0.0.1:8000/ai-systems/${id}/classification`
+          `/api/ai-systems/${id}/classification`
         );
 
         if (classificationResponse.ok) {
@@ -117,22 +118,22 @@ export default function GovernanceWorkspacePage() {
         }
 
         const evaluationResponse = await fetch(
-          `http://127.0.0.1:8000/ai-systems/${id}/evaluation`
+          `/api/ai-systems/${id}/evaluation`
         );
-        const riskResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/risk`);
+        const riskResponse = await fetch(`/api/ai-systems/${id}/risk`);
         if (riskResponse.ok) {
           const riskData = await riskResponse.json();
           const riskItems = Array.isArray(riskData) ? riskData : riskData.value || [];
           setRisk(riskItems.length > 0 ? { status: riskItems[0].status } : null);
         }
 
-        const reviewResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/review`);
-        const approvalResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/approval`);
-        const monitoringResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/monitoring`);
-        const controlsResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/control`);
-          const changesResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/change`);
-        const incidentsResponse = await fetch(`http://127.0.0.1:8000/ai-systems/${id}/incidents`);
-        const assuranceResponse = await fetch(`http://127.0.0.1:8000/assurances?ai_system_id=${id}`);
+        const reviewResponse = await fetch(`/api/ai-systems/${id}/review`);
+        const approvalResponse = await fetch(`/api/ai-systems/${id}/approval`);
+        const monitoringResponse = await fetch(`/api/ai-systems/${id}/monitoring`);
+        const controlsResponse = await fetch(`/api/ai-systems/${id}/control`);
+          const changesResponse = await fetch(`/api/ai-systems/${id}/change`);
+        const incidentsResponse = await fetch(`/api/ai-systems/${id}/incidents`);
+        const assuranceResponse = await fetch(`/api/assurances?ai_system_id=${id}`);
 
         if (reviewResponse.ok) {
           setReview(await reviewResponse.json());
