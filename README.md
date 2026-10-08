@@ -10,29 +10,32 @@ AIGO Framework defines the governance model, concepts, structures, requirements,
 
 AIGO Studio provides the operational software for applying and managing that governance model in an organizational environment.
 
-The Studio repository is intentionally separate from the Framework source repository. It does not contain the complete Framework documentation, research material, mappings, schemas, or development assets.
+The Studio repository is intentionally separate from the Framework source repository.
 
 ## What Studio provides
 
-- AI system registration and lifecycle management
-- AI classification
-- Governance evaluations
-- Risk management and risk acceptance
-- Control management
-- Change management
-- Incident management
-- Governance reviews and approvals
-- Validation and governance completeness checks
-- Evidence management
-- Governance rules
-- Assurance records
-- Governance d```bashboard and activity overview
-- PostgreSQL persistence
-- Docker-based self-hosted deployment
+* AI system registration and lifecycle management
+* AI classification
+* Governance evaluations
+* Risk management and risk acceptance
+* Control management
+* Change management
+* Incident management
+* Governance reviews and approvals
+* Validation and governance completeness checks
+* Evidence management
+* Governance rules
+* Assurance records
+* Governance dashboard and activity overview
+* PostgreSQL persistence
+* Docker-based self-hosted deployment
 
-## Deployment
+## Quick Start
 
-AIGO Studio is designed to run as a self-hosted deployment for an organization.
+### Requirements
+
+* Docker Desktop
+* Git
 
 ### Run with Docker Compose
 
@@ -42,17 +45,22 @@ cd aigo-framework-studio
 docker compose up -d --build
 ```
 
-Then open Studio at http://localhost:3001 and the API at http://localhost:8000.
+Then open Studio at:
 
-For production or organizational deployment, configure the database password and other deployment settings through .env.
+http://localhost:3001
+
+The API runs internally through the Studio web application and does not need to be opened directly.
+
+For detailed Studio guidance, including what to enter on each governance page, see:
+
+https://docs.aigoframework.com/docs/aigo-framework-studio
 
 ## Development
 
-`	ext
-apps/
-  api/    FastAPI backend
-  web/    Next.js frontend
-`
+The application consists of:
+
+* `apps/api/` — FastAPI backend
+* `apps/web/` — Next.js frontend
 
 The backend uses PostgreSQL, SQLAlchemy, Alembic, Pydantic, and FastAPI. The frontend uses Next.js, React, TypeScript, and Tailwind CSS.
 
@@ -71,6 +79,8 @@ Framework documentation is maintained separately from this product repository.
 Framework: https://aigoframework.com
 
 Documentation: https://docs.aigoframework.com
+
+Studio guidance: https://docs.aigoframework.com/docs/aigo-framework-studio
 
 ## Status
 
