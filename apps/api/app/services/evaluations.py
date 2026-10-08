@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.evaluation import EvaluationModel
-from app.schemas.evaluation import EvaluationRequestCreate
+from app.schemas.evaluation import EvaluationRequestCreate, EvaluationSectionUpdate
 
 
 def save_evaluation_request(
@@ -43,6 +43,36 @@ def save_evaluation_request(
 
     return _to_dict(evaluation)
 
+
+def update_evaluation_section(
+    db: Session,
+    ai_system_id: str,
+    data: EvaluationSectionUpdate,
+) -> dict:
+    evaluation = db.scalars(
+        select(EvaluationModel).where(
+            EvaluationModel.ai_system_id == ai_system_id
+        )
+    ).first()
+
+    if evaluation is None:
+        evaluation = EvaluationModel(ai_system_id=ai_system_id)
+
+    if data.section == "evaluation_request":
+        evaluation.evaluation_purpose = data.evaluation_purpose
+        evaluation.governance_context = data.governance_context
+        evaluation.evaluation_scope = data.evaluation_scope
+        if data.evaluation_trigger is not None:
+            evaluation.evaluation_trigger = data.evaluation_trigger
+    else:
+        evaluation.reassessment = data.reassessment.model_dump() if data.reassessment is not None else None
+
+    evaluation.ai_system_id = ai_system_id
+    db.add(evaluation)
+    db.commit()
+    db.refresh(evaluation)
+
+    return _to_dict(evaluation)
 
 def get_evaluation_request(
     db: Session,

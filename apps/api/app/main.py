@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.schemas.ai_system import AISystemCreate
 from app.schemas.approval import ApprovalCreate
 from app.schemas.classification import AIClassificationCreate
-from app.schemas.evaluation import EvaluationRequestCreate
+from app.schemas.evaluation import EvaluationRequestCreate, EvaluationSectionUpdate
 from app.schemas.evidence import EvidenceCreate
 from app.schemas.monitoring import MonitoringCreate
 from app.schemas.risk import RiskCreate
@@ -19,14 +19,14 @@ from app.schemas.rule_results import RuleResultsUpdate
 from app.services.ai_systems import create_ai_system, list_ai_systems
 from app.services.approval import get_approval, save_approval
 from app.services.classifications import get_classification, save_classification
-from app.services.evaluations import get_evaluation_request, save_evaluation_request
+from app.services.evaluations import get_evaluation_request, save_evaluation_request, update_evaluation_section
 from app.services.evidence import create_evidence, delete_evidence, list_evidence, update_evidence
 from app.services.monitoring import get_monitoring, save_monitoring
 from app.services.risk import delete_risk, get_risks, save_risk, update_risk
 from app.services.control import delete_control, get_controls, save_control, update_control
 from app.services.review import get_review, save_review
 from app.services.rules import get_governance_rules, save_governance_rules
-from app.services.rule_results import get_rule_result_history, get_rule_results, save_rule_results
+from app.services.rule_results import delete_rule_result, get_rule_result_history, get_rule_results, save_rule_results
 
 app = FastAPI(
     title="AIGO Framework API",
@@ -127,6 +127,14 @@ def put_ai_system_evaluation(
     return save_evaluation_request(db, ai_system_id, data)
 
 
+@app.patch("/ai-systems/{ai_system_id}/evaluation")
+def patch_ai_system_evaluation(
+    ai_system_id: str,
+    data: EvaluationSectionUpdate,
+    db: Session = Depends(get_db),
+):
+    return update_evaluation_section(db, ai_system_id, data)
+
 @app.get("/ai-systems/{ai_system_id}/review")
 def get_ai_system_review(ai_system_id: str, db: Session = Depends(get_db)):
     return get_review(db, ai_system_id)
@@ -190,6 +198,15 @@ def put_ai_system_rule_results(
     db: Session = Depends(get_db),
 ):
     return {"results": save_rule_results(db, ai_system_id, data)}
+
+
+@app.delete("/ai-systems/{ai_system_id}/rule-results/{rule_id}")
+def delete_ai_system_rule_result(
+    ai_system_id: str,
+    rule_id: str,
+    db: Session = Depends(get_db),
+):
+    return {"results": delete_rule_result(db, ai_system_id, rule_id)}
 
 
 @app.get("/ai-systems/{ai_system_id}/monitoring")

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -64,4 +66,15 @@ class EvaluationRequestCreate(BaseModel):
     scope: AssessmentScope
     criteria: list[AssessmentCriterion] = Field(default_factory=list)
     assessmentResult: AssessmentResult
+    reassessment: ReassessmentProfile | None = None
+
+
+class EvaluationSectionUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    section: Literal["evaluation_request", "reassessment"]
+    evaluation_purpose: str | None = Field(default=None, max_length=5000)
+    governance_context: str | None = Field(default=None, max_length=5000)
+    evaluation_scope: str | None = Field(default=None, max_length=5000)
+    evaluation_trigger: str | None = Field(default=None, max_length=100)
     reassessment: ReassessmentProfile | None = None

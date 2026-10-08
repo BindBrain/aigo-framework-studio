@@ -52,6 +52,25 @@ def save_rule_results(
     return get_rule_results(db, ai_system_id)
 
 
+def delete_rule_result(
+    db: Session,
+    ai_system_id: str,
+    rule_id: str,
+) -> list[dict]:
+    item = db.scalar(
+        select(RuleResultModel).where(
+            RuleResultModel.ai_system_id == ai_system_id,
+            RuleResultModel.rule_id == rule_id,
+        )
+    )
+
+    if item is not None:
+        db.delete(item)
+        db.commit()
+
+    return get_rule_results(db, ai_system_id)
+
+
 def get_rule_results(
     db: Session,
     ai_system_id: str,

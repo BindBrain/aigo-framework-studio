@@ -33,6 +33,9 @@ export default function EvaluationPage() {
   const [reviewOwner, setReviewOwner] = useState("");
   const [triggeredReviewCriteria, setTriggeredReviewCriteria] = useState("");
   const [saved, setSaved] = useState(false);
+  const [evaluationExists, setEvaluationExists] = useState(false);
+  const [reassessmentSaved, setReassessmentSaved] = useState(false);
+  const [reassessmentExists, setReassessmentExists] = useState(false);
   const [rules, setRules] = useState<
     {
       id: string;
@@ -48,6 +51,7 @@ export default function EvaluationPage() {
   const [ruleApplicability, setRuleApplicability] = useState("");
   const [rulesSaved, setRulesSaved] = useState(false);
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [ruleResults, setRuleResults] = useState<
     {
       rule_id: string;
@@ -100,59 +104,16 @@ export default function EvaluationPage() {
       const response = await fetch(
         `/api/ai-systems/${id}/evaluation`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            status: "DRAFT",
-            assessmentType: "CONTROL",
-            objectVersion: "0.1",
-            schemaVersion: "0.1",
-            subject: {
-              aiSystemId: id,
-              objectType: "AI_SYSTEM",
-              objectId: id,
-            },
-            scope: {
-              description:
-                evaluationScope ||
-                "Evaluation of the registered AI system against applicable governance controls.",
-              jurisdictions: [],
-              lifecycleStages: ["ASSESS"],
-            },
-            criteria: rules.map((rule) => ({
-              criterionId: rule.id,
-              source: rule.source || "AIGO Framework",
-              description: rule.description || rule.name,
-              mandatory: true,
-            })),
-            assessmentResult: {
-              outcome: "NOT_ASSESSED",
-              summary: null,
-              rationale: null,
-            },
+            section: "evaluation_request",
             evaluation_purpose: evaluationPurpose || null,
             governance_context: governanceContext || null,
             evaluation_scope: evaluationScope || null,
             evaluation_trigger: evaluationTrigger,
-            reassessment: reassessmentRequired
-              ? {
-                  required: true,
-                  trigger: reassessmentTrigger || null,
-                  assessmentId: null,
-                  nextAssessmentDate: nextAssessmentDate || null,
-                  frequency: reassessmentFrequency || null,
-                  nextReviewDate: nextReviewDate || null,
-                  reviewOwner: reviewOwner.trim()
-                    ? { role: reviewOwner.trim() }
-                    : null,
-                  triggeredReviewCriteria: triggeredReviewCriteria
-                    .split("\n")
-                    .map((item) => item.trim())
-                    .filter(Boolean),
-                }
-              : null,
           }),
         }
       );
@@ -162,6 +123,7 @@ export default function EvaluationPage() {
       }
 
       setSaved(true);
+      setEvaluationExists(true);
     } catch (err) {
       setError(
         err instanceof Error
@@ -306,7 +268,15 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
         evaluation.evaluation_trigger || "initial_assessment"
       );
 
+      setEvaluationExists(Boolean(
+        evaluation.evaluation_purpose ||
+        evaluation.governance_context ||
+        evaluation.evaluation_scope
+      ));
+
       const reassessment = evaluation.reassessment;
+      setReassessmentExists(Boolean(reassessment));
+      setReassessmentSaved(Boolean(reassessment));
       if (reassessment) {
         setReassessmentRequired(Boolean(reassessment.required));
         setReassessmentTrigger(reassessment.trigger || "");
@@ -328,6 +298,33 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
       );
     }
   }
+  const saveReassessment = async () => {
+    setError("");
+    try {
+      const response = await fetch(`/api/ai-systems/${id}/evaluation`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section: "reassessment",
+          reassessment: {
+            required: reassessmentRequired,
+            trigger: reassessmentTrigger || null,
+            assessmentId: null,
+            nextAssessmentDate: nextAssessmentDate || null,
+            frequency: reassessmentFrequency || null,
+            nextReviewDate: nextReviewDate || null,
+            reviewOwner: reviewOwner.trim() ? { role: reviewOwner.trim() } : null,
+            triggeredReviewCriteria: triggeredReviewCriteria.split("\n").map((item) => item.trim()).filter(Boolean),
+          },
+        }),
+      });
+      if (!response.ok) throw new Error("Unable to save reassessment.");
+      setReassessmentSaved(true);
+      setReassessmentExists(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save reassessment.");
+    }
+  };
   const saveRuleResult = async () => {
     if (!resultRuleId) {
       return;
@@ -367,6 +364,31 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
     setRuleResults(data.results ?? []);
     setResultsSaved(true);
   };
+  const deleteRuleResult = async (ruleId: string) => {
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/ai-systems/${id}/rule-results/${ruleId}`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        throw new Error("Unable to delete rule result.");
+      }
+      const data = await response.json();
+      setRuleResults(data.results ?? []);
+      if (resultRuleId === ruleId) {
+        setResultRuleId("");
+        setResultStatus("PASS");
+        setResultNotes("");
+      }
+      setResultsSaved(false);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to delete rule result.",
+      );
+    }
+  };
+
   const loadRuleResults = async () => {
     const response = await fetch(
       `/api/ai-systems/${id}/rule-results`,
@@ -505,6 +527,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                 value={evaluationPurpose}
                 onChange={(event) => setEvaluationPurpose(event.target.value)}
                 rows={4}
+                disabled={evaluationExists && saved}
                 placeholder="e.g. Assess governance readiness before production use."
                 className="mt-3 w-full resize-y rounded-md border border-[#d7dce1] bg-white px-3 py-2 text-sm text-[#18202b] outline-none focus:border-[#9da5af]"
               />
@@ -523,6 +546,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                 value={governanceContext}
                 onChange={(event) => setGovernanceContext(event.target.value)}
                 rows={4}
+                disabled={evaluationExists && saved}
                 placeholder="e.g. Classified for AI governance and data protection requirements."
                 className="mt-3 w-full resize-y rounded-md border border-[#d7dce1] bg-white px-3 py-2 text-sm text-[#18202b] outline-none focus:border-[#9da5af]"
               />
@@ -541,6 +565,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                 value={evaluationScope}
                 onChange={(event) => setEvaluationScope(event.target.value)}
                 rows={4}
+                disabled={evaluationExists && saved}
                 placeholder="e.g. Governance, risk, controls, documentation, and operational use."
                 className="mt-3 w-full resize-y rounded-md border border-[#d7dce1] bg-white px-3 py-2 text-sm text-[#18202b] outline-none focus:border-[#9da5af]"
               />
@@ -557,6 +582,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
         <select
                 value={evaluationTrigger}
                 onChange={(event) => setEvaluationTrigger(event.target.value)}
+                disabled={evaluationExists && saved}
                 className="mt-3 w-full rounded-md border border-[#d7dce1] bg-white px-3 py-2 text-sm text-[#18202b] outline-none focus:border-[#9da5af]"
               >
                 <option value="initial_assessment">Initial assessment</option>
@@ -569,16 +595,15 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
             </div>
           </div>
           <div className="mt-6 flex items-center justify-between border-t border-[#e5e8eb] pt-5">
-            {saved && (
-              <span className="text-sm text-[#3e6b4d]">Evaluation request saved.</span>
+            {saved ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-[#3e6b4d]">Evaluation request saved.</span>
+                <button type="button" onClick={() => setSaved(false)} className="text-sm font-medium text-[#59636f] hover:text-[#18202b]">Edit</button>
+                <button type="button" onClick={async () => { await fetch(`/api/ai-systems/${id}/evaluation`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: "evaluation_request", evaluation_purpose: null, governance_context: null, evaluation_scope: null, evaluation_trigger: "initial_assessment" }) }); setEvaluationPurpose(""); setGovernanceContext(""); setEvaluationScope(""); setEvaluationTrigger("initial_assessment"); setSaved(false); setEvaluationExists(false); }} className="text-sm font-medium text-[#a33b3b] hover:text-[#7f2d2d]">Delete</button>
+              </div>
+            ) : (
+              <button type="button" onClick={saveEvaluationRequest} className="rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white hover:bg-[#252e3a]">Save Evaluation Request</button>
             )}
-            <button
-              type="button"
-              onClick={saveEvaluationRequest}
-              className="rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white hover:bg-[#252e3a]"
-            >
-              Save Evaluation Request
-            </button>
           </div>
         </section>
         <section className="mt-5">
@@ -604,6 +629,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                 <input
                   type="checkbox"
                   checked={reassessmentRequired}
+                  disabled={reassessmentExists && reassessmentSaved}
                   onChange={(event) => setReassessmentRequired(event.target.checked)}
                 />
                 Reassessment required
@@ -615,6 +641,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     Trigger
                     <input
                       value={reassessmentTrigger}
+                      disabled={reassessmentExists && reassessmentSaved}
                       onChange={(event) => setReassessmentTrigger(event.target.value)}
                       placeholder="Periodic governance review"
                       className="mt-2 w-full rounded-md border border-[#d7dce1] px-3 py-2 text-sm font-normal text-[#18202b] outline-none"
@@ -625,6 +652,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     Frequency
                     <input
                       value={reassessmentFrequency}
+                      disabled={reassessmentExists && reassessmentSaved}
                       onChange={(event) => setReassessmentFrequency(event.target.value)}
                       placeholder="ANNUAL"
                       className="mt-2 w-full rounded-md border border-[#d7dce1] px-3 py-2 text-sm font-normal text-[#18202b] outline-none"
@@ -636,6 +664,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     <input
                       type="date"
                       value={nextAssessmentDate}
+                      disabled={reassessmentExists && reassessmentSaved}
                       onChange={(event) => setNextAssessmentDate(event.target.value)}
                       className="mt-2 w-full rounded-md border border-[#d7dce1] px-3 py-2 text-sm font-normal text-[#18202b] outline-none"
                     />
@@ -645,6 +674,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     Review owner
                     <input
                       value={reviewOwner}
+                      disabled={reassessmentExists && reassessmentSaved}
                       onChange={(event) => setReviewOwner(event.target.value)}
                       placeholder="Governance Owner"
                       className="mt-2 w-full rounded-md border border-[#d7dce1] px-3 py-2 text-sm font-normal text-[#18202b] outline-none"
@@ -656,6 +686,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     <input
                       type="date"
                       value={nextReviewDate}
+                      disabled={reassessmentExists && reassessmentSaved}
                       onChange={(event) => setNextReviewDate(event.target.value)}
                       className="mt-2 w-full rounded-md border border-[#d7dce1] px-3 py-2 text-sm font-normal text-[#18202b] outline-none"
                     />
@@ -665,6 +696,7 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     Triggered review criteria
                     <textarea
                       value={triggeredReviewCriteria}
+                      disabled={reassessmentExists && reassessmentSaved}
                       onChange={(event) => setTriggeredReviewCriteria(event.target.value)}
                       placeholder={"Material system change\nSignificant incident\nChange in applicable requirements"}
                       rows={4}
@@ -675,16 +707,33 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                     </span>
                   </label>
                 <div className="mt-5 flex items-center justify-between border-t border-[#e5e8eb] pt-4">
-                  {saved && (
-                    <span className="text-sm text-[#3e6b4d]">Reassessment saved.</span>
+                  {reassessmentSaved ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-[#3e6b4d]">Reassessment saved.</span>
+                      <button type="button" onClick={() => setReassessmentSaved(false)} className="text-sm font-medium text-[#59636f] hover:text-[#18202b]">Edit</button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const response = await fetch(`/api/ai-systems/${id}/evaluation`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: "reassessment", reassessment: null }) });
+                          if (!response.ok) { setError("Unable to delete reassessment."); return; }
+                          setReassessmentRequired(false);
+                          setReassessmentTrigger("");
+                          setNextAssessmentDate("");
+                          setReassessmentFrequency("");
+                          setNextReviewDate("");
+                          setReviewOwner("");
+                          setTriggeredReviewCriteria("");
+                          setReassessmentSaved(false);
+                          setReassessmentExists(false);
+                        }}
+                        className="text-sm font-medium text-[#a33b3b] hover:text-[#7f2d2d]"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={saveReassessment} className="rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white hover:bg-[#252e3a]">Save Reassessment</button>
                   )}
-                  <button
-                    type="button"
-                    onClick={saveEvaluationRequest}
-                    className="rounded-md bg-[#18202b] px-4 py-2 text-sm font-medium text-white hover:bg-[#252e3a]"
-                  >
-                    Save Reassessment
-                  </button>
                 </div>
                 </div>
               )}
@@ -708,38 +757,42 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                   No governance rules recorded yet.
                 </div>
               ) : (
-                <div className="mt-4 overflow-x-auto rounded-md border border-[#e1e5e9]">
-                  <table className="w-full min-w-[760px] text-left text-sm">
-                    <thead className="bg-[#fafbfc] text-xs font-semibold uppercase tracking-wide text-[#737b87]">
-                      <tr>
-                        <th className="px-4 py-3">ID</th>
-                        <th className="px-4 py-3">Rule name</th>
-                        <th className="px-4 py-3">Description</th>
-                        <th className="px-4 py-3">Source</th>
-                        <th className="px-4 py-3">Applicability</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#e1e5e9]">
-                      {rules.map((rule) => (
-                        <tr key={rule.id} className="bg-white">
-                          <td className="px-4 py-3 align-top font-mono text-xs text-[#626b77]">
+                <div className="mt-4 space-y-2">
+                  {rules.map((rule) => {
+                    const expanded = expandedRuleId === rule.id;
+                    return (
+                      <div key={rule.id} className="rounded-md border border-[#e1e5e9] bg-white">
+                        <div className="flex items-center justify-between gap-3 px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedRuleId(expanded ? null : rule.id)}
+                            className="flex min-w-0 items-center gap-3 text-left"
+                          >
+                            <span className="text-xs text-[#737b87]">{expanded ? "▼" : "▶"}</span>
+                            <span className="truncate text-sm font-medium text-[#18202b]">{rule.name}</span>
+                          </button>
+                          <span className="shrink-0 rounded bg-[#f1f3f5] px-2 py-1 font-mono text-[10px] text-[#626b77]">
                             {rule.id}
-                          </td>
-                          <td className="px-4 py-3 align-top font-medium text-[#18202b]">
-                            {rule.name}
-                          </td>
-                          <td className="px-4 py-3 align-top text-[#737b87]">
-                            {rule.description || "—"}
-                          </td>
-                          <td className="px-4 py-3 align-top text-[#737b87]">
-                            {rule.source || "—"}
-                          </td>
-                          <td className="px-4 py-3 align-top text-[#737b87]">
-                            {rule.applicability || "—"}
-                          </td>
-                          <td className="px-4 py-3 align-top text-right">
-                            <div className="flex justify-end gap-2">
+                          </span>
+                        </div>
+
+                        {expanded && (
+                          <div className="border-t border-[#e1e5e9] px-4 py-4">
+                            <div className="grid gap-4 sm:grid-cols-3">
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-wide text-[#9299a3]">Description</div>
+                                <div className="mt-1 text-sm leading-6 text-[#737b87]">{rule.description || "—"}</div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-wide text-[#9299a3]">Source</div>
+                                <div className="mt-1 text-sm leading-6 text-[#737b87]">{rule.source || "—"}</div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-wide text-[#9299a3]">Applicability</div>
+                                <div className="mt-1 text-sm leading-6 text-[#737b87]">{rule.applicability || "—"}</div>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex gap-2 border-t border-[#e5e8eb] pt-3">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -762,11 +815,11 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                                 Delete
                               </button>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -798,12 +851,17 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                       placeholder="Source or framework"
                       className="rounded-md border border-[#d7dce1] bg-white px-3 py-2 text-sm outline-none focus:border-[#9aa3ae]"
                     />
-                    <input
+                    <select
                       value={ruleApplicability}
                       onChange={(event) => setRuleApplicability(event.target.value)}
-                      placeholder="Applicability"
                       className="rounded-md border border-[#d7dce1] bg-white px-3 py-2 text-sm outline-none focus:border-[#9aa3ae]"
-                    />
+                    >
+                      <option value="">Select applicability</option>
+                      <option value="Applicable">Applicable</option>
+                      <option value="Not applicable">Not applicable</option>
+                      <option value="Partially applicable">Partially applicable</option>
+                      <option value="To be determined">To be determined</option>
+                    </select>
                   </div>
 
                   <div className="flex items-center justify-between gap-3">
@@ -975,6 +1033,12 @@ setRules(Array.isArray(data) ? data : data.rules || data.value || []);
                               <span className="rounded bg-[#f1f3f5] px-2 py-1 text-[10px] font-semibold tracking-wide text-[#626b77]">
                                 {result.status}
                               </span>
+                              <button type="button" onClick={() => { setResultRuleId(result.rule_id); setResultStatus(result.status); setResultNotes(result.notes ?? ""); setResultsSaved(false); }} className="rounded border border-[#d7dce1] px-2.5 py-1.5 text-xs font-medium text-[#626b77] hover:bg-[#f7f8fa]">
+                                Edit
+                              </button>
+                              <button type="button" onClick={() => deleteRuleResult(result.rule_id)} className="rounded border border-[#e1caca] px-2.5 py-1.5 text-xs font-medium text-[#9a4b4b] hover:bg-[#fff7f7]">
+                                Delete
+                              </button>
                             </div>
                           </div>
                         </div>
