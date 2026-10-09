@@ -395,49 +395,57 @@ export default function Home() {
               </section>
 
               <section className="border border-[#dfe3e8] bg-white">
-                <div className="border-b border-[#e5e7eb] px-5 py-4 sm:px-6">
-                  <div className="text-sm font-semibold">
-                    Governance Scope
-                  </div>
+  <div className="border-b border-[#e5e7eb] px-5 py-4 sm:px-6">
+    <div className="text-sm font-semibold">Governance at a Glance</div>
+    <div className="mt-1 text-xs text-[#7b838e]">
+      Quick access to the governance records and workspaces managed in AIGO Studio.
+    </div>
+  </div>
 
-                  <div className="mt-1 text-xs text-[#7b838e]">
-                    Core governance areas managed by AIGO Studio.
-                  </div>
-                </div>
+  <div className="grid gap-3 p-5 sm:grid-cols-2 sm:px-6">
+    <Link href="/ai-systems" className="group border border-[#e5e7eb] p-4 transition-colors hover:border-[#c7cdd5] hover:bg-[#fafbfc]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-[#343d48]">AI Systems</span>
+        <span className="text-xs font-medium text-[#7b838e]">Open</span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[#7b838e]">Manage registered systems and open their governance lifecycle.</p>
+      <span className="mt-3 inline-block text-xs font-medium text-[#525d6a]">Open workspace</span>
+    </Link>
 
-                <div className="divide-y divide-[#edf0f2]">
-                  {[
-                    ["Frameworks", ""],
-                    ["Domains", ""],
-                    ["Rules", "/rules"],
-                    ["Evidence", "/evidence"],
-                    ["Controls", ""],
-                    ["Mappings", ""],
-                  ].map(([item, href]) => (
-                    <div
-                      key={item}
-                      className="flex items-center justify-between px-5 py-4 sm:px-6"
-                    >
-                      {href ? (
-                        <Link
-                          href={href}
-                          className="text-sm font-medium text-[#343d48] hover:underline"
-                        >
-                          {item}
-                        </Link>
-                      ) : (
-                        <div className="text-sm font-medium text-[#343d48]">
-                          {item}
-                        </div>
-                      )}
+    <Link href="/rules" className="group border border-[#e5e7eb] p-4 transition-colors hover:border-[#c7cdd5] hover:bg-[#fafbfc]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-[#343d48]">Governance Rules</span>
+        <span className="text-xs font-medium text-[#7b838e]">Open</span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[#7b838e]">View and manage the governance rules recorded in the workspace.</p>
+      <span className="mt-3 inline-block text-xs font-medium text-[#525d6a]">Open rules</span>
+    </Link>
 
-                      <span className="text-xs text-[#a0a6ae]">
-                        {href ? "Open" : "Not configured"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
+    <Link href="/evidence" className="group border border-[#e5e7eb] p-4 transition-colors hover:border-[#c7cdd5] hover:bg-[#fafbfc]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-[#343d48]">Evidence</span>
+        <span className="text-xs font-medium text-[#7b838e]">Open</span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[#7b838e]">Access the evidence workspace and its recorded supporting material.</p>
+      <span className="mt-3 inline-block text-xs font-medium text-[#525d6a]">Open evidence</span>
+    </Link>
+
+    <Link href="/assurance" className="group border border-[#e5e7eb] p-4 transition-colors hover:border-[#c7cdd5] hover:bg-[#fafbfc]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-[#343d48]">Assurance</span>
+        <span className="text-xs font-medium text-[#7b838e]">Open</span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[#7b838e]">Review assurance records and create an initial assurance draft.</p>
+      <span className="mt-3 inline-block text-xs font-medium text-[#525d6a]">Open assurance</span>
+    </Link>
+  </div>
+
+  <div className="border-t border-[#edf0f2] px-5 py-3 sm:px-6">
+    <p className="text-[11px] leading-5 text-[#9299a3]">
+      Open a workspace to review its records. Links do not imply that a governance activity is complete or compliant.
+    </p>
+  </div>
+</section>
             </div>
           </div>
         </main>
