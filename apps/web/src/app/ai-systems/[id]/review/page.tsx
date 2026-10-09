@@ -595,32 +595,7 @@ export default function ReviewPage() {
           )}
         </section>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-2">
-          {[
-            ["Evaluation Results", "No rule results have been recorded yet."],
-            ["Evidence", "No review evidence has been recorded yet."],
-            ["Review Requirements", "No review requirements have been identified yet."],
-            ["Actions", "No review actions have been recorded yet."],
-            ["Governance Decisions", "No governance decisions have been recorded yet."],
-          ].map(([title, description]) => (
-            <div
-              key={title}
-              className="rounded-lg border border-[#e1e5e9] bg-white p-5"
-            >
-              <h3 className="text-sm font-semibold text-[#18202b]">
-                {title}
-              </h3>
 
-              <p className="mt-2 text-sm leading-6 text-[#737b87]">
-                {description}
-              </p>
-
-              <div className="mt-4 text-xs font-medium text-[#9299a3]">
-                Not started
-              </div>
-            </div>
-          ))}
-        </section>
       </div>
     </main>
   );
