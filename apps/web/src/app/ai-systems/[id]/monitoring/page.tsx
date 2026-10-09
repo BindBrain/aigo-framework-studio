@@ -263,7 +263,6 @@ className="text-sm text-slate-500 hover:text-slate-900"
 >
 ← Back to Governance Workspace </Link>
 
-```
     <div className="mt-6">
       <p className="text-sm font-medium text-slate-500">
         Governance Lifecycle
