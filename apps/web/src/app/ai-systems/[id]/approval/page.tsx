@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 type Approval = {
+  id?: string;
   status?: string;
   approval_scope?: string | null;
   approval_notes?: string | null;
@@ -29,6 +30,7 @@ export default function ApprovalPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [performedBy, setPerformedBy] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,6 +50,7 @@ export default function ApprovalPage() {
         const usersData = await usersResponse.json();
 
         setApproval(data);
+        setSaved(Boolean(data.id));
         setApprovalScope(data.approval_scope || "");
         setApprovalNotes(data.approval_notes || "");
         setApprovalOutcome(data.approval_outcome || "NOT_ASSESSED");
@@ -98,8 +101,50 @@ export default function ApprovalPage() {
       const savedApproval = await response.json();
       setApproval(savedApproval);
       setPerformedBy(savedApproval.performedBy || "");
+      setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save approval");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancelEdit() {
+    if (approval) {
+      setApprovalScope(approval.approval_scope || "");
+      setApprovalNotes(approval.approval_notes || "");
+      setApprovalOutcome(approval.approval_outcome || "NOT_ASSESSED");
+      setPerformedBy(approval.performedBy || "");
+      setSaved(true);
+      setError("");
+    }
+  }
+
+  async function deleteApproval() {
+    if (!approval?.id) return;
+    if (!window.confirm("Delete this approval record? This cannot be undone.")) return;
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/ai-systems/${id}/approval`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Unable to delete approval: ${errorText}`);
+      }
+
+      setApproval(null);
+      setApprovalScope("");
+      setApprovalNotes("");
+      setApprovalOutcome("NOT_ASSESSED");
+      setPerformedBy("");
+      setSaved(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete approval");
     } finally {
       setSaving(false);
     }
@@ -143,6 +188,7 @@ export default function ApprovalPage() {
                   <textarea
                     value={approvalScope}
                     onChange={(event) => setApprovalScope(event.target.value)}
+                    disabled={saved || saving}
                     rows={4}
                     className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm"
                     placeholder="Describe what is being approved."
@@ -154,6 +200,7 @@ export default function ApprovalPage() {
                   <textarea
                     value={approvalNotes}
                     onChange={(event) => setApprovalNotes(event.target.value)}
+                    disabled={saved || saving}
                     rows={5}
                     className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm"
                     placeholder="Record the approval rationale, conditions, or notes."
@@ -165,6 +212,7 @@ export default function ApprovalPage() {
                   <select
                     value={performedBy}
                     onChange={(event) => setPerformedBy(event.target.value)}
+                    disabled={saved || saving}
                     className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm"
                   >
                     <option value="">Actor not recorded</option>
@@ -181,6 +229,7 @@ export default function ApprovalPage() {
                   <select
                     value={approvalOutcome}
                     onChange={(event) => setApprovalOutcome(event.target.value)}
+                    disabled={saved || saving}
                     className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm"
                   >
                     <option value="NOT_ASSESSED">Not assessed</option>
@@ -196,15 +245,52 @@ export default function ApprovalPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex items-center gap-4">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  {saving ? "Saving..." : "Save Approval"}
-                </button>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                {!saved && (
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : approval?.id ? "Save Changes" : "Save Approval"}
+                  </button>
+                )}
 
+                {approval?.id && saved && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setSaved(false)}
+                      disabled={saving}
+                      className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={deleteApproval}
+                      disabled={saving}
+                      className="rounded-lg border border-red-300 px-5 py-2.5 text-sm font-medium text-red-700 disabled:opacity-50"
+                    >
+                      {saving ? "Please wait..." : "Delete"}
+                    </button>
+                  </>
+                )}
+
+                {approval?.id && !saved && (
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    disabled={saving}
+                    className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                {saved && approval?.id && (
+                  <p className="text-sm text-slate-600">Approval record saved.</p>
+                )}
                 {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
             </section>

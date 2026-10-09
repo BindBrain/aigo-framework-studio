@@ -71,3 +71,17 @@ def _to_dict(approval: ApprovalModel) -> dict:
         "createdAt": approval.created_at.isoformat() if approval.created_at else None,
         "updatedAt": approval.updated_at.isoformat() if approval.updated_at else None,
     }
+
+
+def delete_approval(db: Session, ai_system_id: str) -> bool:
+    approval = db.scalars(
+        select(ApprovalModel).where(
+            ApprovalModel.ai_system_id == ai_system_id
+        )
+    ).first()
+    if approval is None:
+        return False
+
+    db.delete(approval)
+    db.commit()
+    return True

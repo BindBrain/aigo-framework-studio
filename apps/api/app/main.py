@@ -17,7 +17,7 @@ from app.schemas.rules import GovernanceRulesUpdate
 from app.schemas.rule_results import RuleResultsUpdate
 
 from app.services.ai_systems import create_ai_system, list_ai_systems
-from app.services.approval import get_approval, save_approval
+from app.services.approval import delete_approval, get_approval, save_approval
 from app.services.classifications import delete_classification, get_classification, save_classification
 from app.services.evaluations import get_evaluation_request, save_evaluation_request, update_evaluation_section
 from app.services.evidence import create_evidence, delete_evidence, list_evidence, update_evidence
@@ -168,6 +168,13 @@ def put_ai_system_approval(
     db: Session = Depends(get_db),
 ):
     return save_approval(db, ai_system_id, data)
+
+
+@app.delete("/ai-systems/{ai_system_id}/approval")
+def delete_ai_system_approval(ai_system_id: str, db: Session = Depends(get_db)):
+    if not delete_approval(db, ai_system_id):
+        raise HTTPException(status_code=404, detail="Approval not found")
+    return {"deleted": True, "ai_system_id": ai_system_id}
 
 
 @app.get("/ai-systems/{ai_system_id}/rules")
