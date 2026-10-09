@@ -24,4 +24,4 @@ class MonitoringCreate(BaseModel):
     status: str = "DRAFT"
     aiSystemId: str = Field(min_length=1, max_length=128)
     monitoringObjectives: list[str] = Field(min_length=1)
-    indicators: list[MonitoringIndicator] = Field(min_length=1)
+    indicators: list[MonitoringIndicator] = Field(default_factory=list)
